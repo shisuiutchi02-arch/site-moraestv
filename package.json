@@ -1,0 +1,12 @@
+{
+  "name": "moraestv-site",
+  "private": true,
+  "description": "Landing + dashboard: local npm start (JSON em disco); Netlify (Function + Blobs em /api/data).",
+  "scripts": {
+    "start": "node server.js",
+    "netlify:dev": "npx --yes netlify-cli dev"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^10.7.5"
+  }
+}

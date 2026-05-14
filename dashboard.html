@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard gerencial — Planos &amp; Clientes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070a0f;
+      --bg2: #0f141c;
+      --bg3: #161d28;
+      --border: #2a3544;
+      --text: #e8ecf3;
+      --text2: #94a3b8;
+      --blue: #3b82f6;
+      --cyan: #22d3ee;
+      --accent: #f97316;
+      --green: #22c55e;
+      --red: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    aside {
+      width: 238px;
+      flex-shrink: 0;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .logo {
+      padding: 0 20px 18px;
+      font-weight: 700;
+      font-size: 15px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .logo span { color: var(--accent); }
+    aside nav button {
+      display: block;
+      width: calc(100% - 24px);
+      margin: 4px 12px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text2);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    aside nav button:hover { background: var(--bg3); color: var(--text); }
+    aside nav button.active { background: rgba(249,115,22,.12); color: var(--accent); }
+
+    main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,20,28,.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .topbar h1 { font-size: 18px; font-weight: 600; }
+    .topbar-meta { font-size: 12px; color: var(--text2); }
+
+    #menuBtn {
+      display: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .content { padding: 22px 24px 40px; flex: 1; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .kpi-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+    .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+    .kpi-value.green { color: var(--green); }
+    .kpi-value.blue { color: var(--cyan); }
+
+    .panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .panel-body { padding: 18px; }
+
+    .grid-forms {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      align-items: start;
+      margin-bottom: 24px;
+    }
+    .form-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .form-card h3 { font-size: 14px; margin-bottom: 14px; font-weight: 600; }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 6px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: rgba(249,115,22,.5);
+      box-shadow: 0 0 0 3px rgba(249,115,22,.1);
+    }
+    textarea { min-height: 72px; resize: vertical; margin-bottom: 10px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 14px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.45;
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 500;
+    }
+    .check-row input[type="checkbox"] {
+      width: auto;
+      margin: 3px 0 0;
+      flex-shrink: 0;
+      accent-color: var(--accent);
+    }
+    .check-row strong { color: var(--accent); font-weight: 600; }
+    .badge-landing {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 0.03em;
+    }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #ea580c); color: #fff; }
+    .btn-secondary { background: var(--blue); color: #fff; }
+    .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text2); }
+    .btn-danger { background: transparent; border: 1px solid rgba(239,68,68,.5); color: var(--red); }
+    .btn-danger:hover { background: rgba(239,68,68,.12); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .actions .btn { padding: 6px 10px; font-size: 12px; }
+    .empty { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 14px; }
+    .hint {
+      font-size: 12px;
+      color: var(--text2);
+      margin: -8px 0 12px;
+      line-height: 1.5;
+    }
+    .banner-thumb {
+      height: 40px;
+      max-width: 120px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    td.src-cell {
+      font-size: 11px;
+      color: var(--text2);
+      word-break: break-all;
+      max-width: 220px;
+    }
+    input[type="file"] {
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 18px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.35);
+      z-index: 100;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+    @media (max-width: 860px) {
+      body { flex-direction: column; }
+      #menuBtn { display: inline-flex; }
+      aside {
+        width: 100%;
+        min-height: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        display: none;
+      }
+      aside.open { display: flex; }
+      .row2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="logo">TV <span>Gerencial</span></div>
+    <nav>
+      <button type="button" class="active" data-view="dash">Painel</button>
+      <button type="button" data-view="planos">Planos</button>
+      <button type="button" data-view="clientes">Clientes</button>
+      <button type="button" data-view="banners">Slides da landing</button>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button type="button" id="menuBtn" aria-label="Menu">☰ Menu</button>
+        <h1 id="pageTitle">Painel gerencial</h1>
+      </div>
+      <div class="topbar-meta" id="topbarMeta">Carregando dados do servidor…</div>
+    </div>
+
+    <div class="content">
+      <section id="view-dash" class="view active">
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-label">Planos cadastrados</div>
+            <div class="kpi-value blue" id="kpiPlanos">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Clientes cadastrados</div>
+            <div class="kpi-value green" id="kpiClientes">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">MRR estimado*</div>
+            <div class="kpi-value" id="kpiMrr">R$ 0,00</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Últimos clientes</div>
+          <div class="panel-body">
+            <div class="table-wrap" id="dashRecentWrap"></div>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--text2);margin-top:12px;">
+          *MRR (receita recorrente mensal estimada): soma dos valores dos planos dos clientes com plano vinculado.
+        </p>
+      </section>
+
+      <section id="view-planos" class="view">
+        <div class="grid-forms">
+          <div class="form-card">
+            <h3 id="planoFormTitle">Novo plano</h3>
+            <form id="formPlano">
+              <input type="hidden" id="planoId" value="">
+              <label for="planoNome">Nome do plano</label>
+              <input type="text" id="planoNome" required placeholder="Ex.: Mensal, 6 meses" maxlength="120">
+              <label for="planoValor">Valor mensal (R$)</label>
+              <input type="number" id="planoValor" required min="0" step="0.01" placeholder="119.00">
+              <label for="planoDesc">Descrição</label>
+              <textarea id="planoDesc" placeholder="Lista de benefícios, canais, observações..." maxlength="2000"></textarea>
+              <label class="check-row" for="planoMaisVendido">
+                <input type="checkbox" id="planoMaisVendido">
+                <span>Marcar como <strong>Mais vendido</strong> na landing (somente um plano; ao marcar este, os outros são desmarcados)</span>
+              </label>
+              <div class="btn-row">
+                <button type="submit" class="btn btn-primary">Salvar plano</button>
+                <button type="button" class="btn btn-ghost" id="cancelPlano" style="display:none;">Cancelar edição</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Planos cadastrados</div>
+          <div class="panel-body" style="padding:0;">
+            <div class="table-wrap"><table><thead><tr>
+              <th>Nome</th><th>Valor / mês</th><th>Descrição</th><th>Landing</th><th></th>
+            </tr></thead><tbody id="tblPlanos"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-clientes" class="view">
+        <div class="grid-forms">
+          <div class="form-card">
+            <h3 id="cliFormTitle">Novo cliente</h3>
+            <form id="formCliente">
+              <input type="hidden" id="cliId" value="">
+              <div class="row2">
+                <div>
+                  <label for="cliNome">Nome completo</label>
+                  <input type="text" id="cliNome" required maxlength="160">
+                </div>
+                <div>
+                  <label for="cliTel">Telefone</label>
+                  <input type="tel" id="cliTel" required placeholder="(00) 00000-0000" maxlength="32">
+                </div>
+              </div>
+              <label for="cliEmail">E-mail</label>
+              <input type="email" id="cliEmail" placeholder="opcional@email.com" maxlength="160">
+              <label for="cliPlano">Plano</label>
+              <select id="cliPlano"><option value="">— Selecionar plano —</option></select>
+              <label for="cliObs">Observações</label>
+              <textarea id="cliObs" placeholder="Endereço, CEP, anotações comerciais..." maxlength="4000"></textarea>
+              <div class="btn-row">
+                <button type="submit" class="btn btn-primary">Salvar cliente</button>
+                <button type="button" class="btn btn-ghost" id="cancelCli" style="display:none;">Cancelar edição</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Clientes</div>
+          <div class="panel-body" style="padding:0;">
+            <div class="table-wrap"><table><thead><tr>
+              <th>Nome</th><th>Telefone</th><th>Plano</th><th>Valor</th><th>Cadastro</th><th></th>
+            </tr></thead><tbody id="tblClientes"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-banners" class="view">
+        <p class="hint" style="margin-bottom:18px;">
+          Slides do topo da <strong>index.html</strong>: imagem de fundo, textos (etiqueta, título, subtítulo) e dois
+          botões. Ordem: <strong>Subir</strong>/<strong>Descer</strong>. Se a lista estiver vazia, a landing usa três
+          imagens padrão em <code>assets/hero/</code>.
+        </p>
+        <div class="grid-forms">
+          <div class="form-card">
+            <h3 id="bannerFormTitle">Novo slide</h3>
+            <form id="formBanner">
+              <input type="hidden" id="bannerEditId" value="">
+              <label for="bannerUrl">URL ou caminho da imagem</label>
+              <p class="hint">Ex.: <code>assets/hero/meu-banner.png</code> ou <code>https://...</code>. Na edição, deixe em branco para manter a imagem atual.</p>
+              <input type="text" id="bannerUrl" placeholder="assets/hero/promo.png" maxlength="2000" autocomplete="off">
+              <label for="bannerFile">Ou enviar imagem (grava base64 no servidor)</label>
+              <p class="hint">Ideal abaixo de ~1,5 MB.</p>
+              <input type="file" id="bannerFile" accept="image/jpeg,image/png,image/webp,image/gif">
+              <label for="bannerAlt">Texto alternativo (acessibilidade)</label>
+              <input type="text" id="bannerAlt" placeholder="Descrição curta da imagem" maxlength="200">
+              <label for="bannerTag">Etiqueta pequena (ex.: NOVO CONTEÚDO)</label>
+              <input type="text" id="bannerTag" placeholder="NOVO CONTEÚDO" maxlength="80">
+              <label for="bannerTitulo">Título principal</label>
+              <input type="text" id="bannerTitulo" placeholder="Filmes em 4K" maxlength="120">
+              <label for="bannerSub">Subtítulo</label>
+              <textarea id="bannerSub" placeholder="Frase de apoio abaixo do título" maxlength="400" rows="2"></textarea>
+              <label for="bannerCta1">Botão principal — texto</label>
+              <input type="text" id="bannerCta1" placeholder="Assistir agora" maxlength="80">
+              <label for="bannerCta1href">Botão principal — link</label>
+              <input type="text" id="bannerCta1href" placeholder="#planos" maxlength="2000">
+              <label for="bannerCta2">Botão secundário — texto</label>
+              <input type="text" id="bannerCta2" placeholder="Mais informações" maxlength="80">
+              <label for="bannerCta2href">Botão secundário — link</label>
+              <input type="text" id="bannerCta2href" placeholder="#contato" maxlength="2000">
+              <div class="btn-row">
+                <button type="submit" class="btn btn-primary" id="bannerSubmitBtn">Salvar no carrossel</button>
+                <button type="button" class="btn btn-ghost" id="cancelBannerEdit" style="display:none;">Cancelar edição</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Slides na ordem da landing</div>
+          <div class="panel-body" style="padding:0;">
+            <div class="table-wrap"><table><thead><tr>
+              <th>Prévia</th><th>Título</th><th>Origem</th><th>Ordem</th><th></th>
+            </tr></thead><tbody id="tblBanners"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+(function () {
+  var API_DATA = '/api/data';
+  var LEGACY_LS_PLANOS = 'tvGerencial_planos_v1';
+  var LEGACY_LS_CLI = 'tvGerencial_clientes_v1';
+  var LEGACY_LS_BANNERS = 'tvGerencial_banners_v1';
+
+  var SERVER_READY = false;
+  var DB_STATE = { version: 1, planos: [], clientes: [], banners: [] };
+  var persistTimer = null;
+  var persistInFlight = false;
+
+  function uuid() {
+    return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 11);
+  }
+
+  function filterBanners(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(function (b) {
+      return b && String(b.src || '').trim();
+    });
+  }
+
+  function normalizeFromDoc(doc) {
+    return {
+      version: typeof doc.version === 'number' ? doc.version : 1,
+      planos: Array.isArray(doc.planos) ? doc.planos.slice() : [],
+      clientes: Array.isArray(doc.clientes) ? doc.clientes.slice() : [],
+      banners: filterBanners(doc.banners || []),
+    };
+  }
+
+  async function hydrateFromServer() {
+    SERVER_READY = false;
+    try {
+      var r = await fetch(API_DATA, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      if (!r.ok) throw new Error(String(r.status));
+      var raw = await r.json();
+      var n = normalizeFromDoc(raw);
+      DB_STATE.version = n.version;
+      DB_STATE.planos = n.planos;
+      DB_STATE.clientes = n.clientes;
+      DB_STATE.banners = n.banners;
+      SERVER_READY = true;
+      await migrateLegacyLocalStorageOnce();
+      return true;
+    } catch (e) {
+      SERVER_READY = false;
+      return false;
+    }
+  }
+
+  async function migrateLegacyLocalStorageOnce() {
+    if (!SERVER_READY || typeof localStorage === 'undefined') return;
+    var busy =
+      DB_STATE.planos.length > 0 || DB_STATE.clientes.length > 0 || DB_STATE.banners.length > 0;
+    if (busy) return;
+
+    function parseArr(key) {
+      try {
+        var j = localStorage.getItem(key);
+        var v = j ? JSON.parse(j) : [];
+        return Array.isArray(v) ? v : [];
+      } catch (e2) {
+        return [];
+      }
+    }
+
+    var p = parseArr(LEGACY_LS_PLANOS);
+    var c = parseArr(LEGACY_LS_CLI);
+    var b = filterBanners(parseArr(LEGACY_LS_BANNERS));
+    if (p.length === 0 && c.length === 0 && b.length === 0) return;
+
+    DB_STATE.planos = p;
+    DB_STATE.clientes = c;
+    DB_STATE.banners = b;
+    var ok = await flushPersistNow(true);
+    if (!ok) {
+      showToast(
+        'Migrar do navegador falhou ao gravar. Confira se /api/data responde (npm start ou deploy Netlify).'
+      );
+      return;
+    }
+    try {
+      localStorage.removeItem(LEGACY_LS_PLANOS);
+      localStorage.removeItem(LEGACY_LS_CLI);
+      localStorage.removeItem(LEGACY_LS_BANNERS);
+    } catch (_) {}
+    showToast('Dados migrados do navegador para o servidor (/api/data).');
+  }
+
+  function queuePersist() {
+    if (!SERVER_READY) return;
+    clearTimeout(persistTimer);
+    persistTimer = setTimeout(function () {
+      flushPersistNow(true);
+    }, 160);
+  }
+
+  /* silentFail: sem toast em falha (ex.: migração). */
+  async function flushPersistNow(silentFail) {
+    if (!SERVER_READY) return false;
+    if (persistInFlight) return false;
+    persistInFlight = true;
+    try {
+      var r = await fetch(API_DATA, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(DB_STATE),
+        cache: 'no-store',
+      });
+      if (!r.ok) {
+        var tx = await r.text();
+        throw new Error(tx || String(r.status));
+      }
+      var saved = await r.json();
+      var n = normalizeFromDoc(saved);
+      DB_STATE.version = n.version;
+      DB_STATE.planos = n.planos;
+      DB_STATE.clientes = n.clientes;
+      DB_STATE.banners = n.banners;
+      return true;
+    } catch (e) {
+      if (!silentFail) {
+        showToast(
+          'Falha ao gravar em /api/data. Local: npm start nesta pasta. Produção: confira Functions + Blobs na Netlify.'
+        );
+      }
+      return false;
+    } finally {
+      persistInFlight = false;
+    }
+  }
+
+  function updateTopbarMeta() {
+    var el = document.getElementById('topbarMeta');
+    if (!el) return;
+    if (SERVER_READY) {
+      el.textContent =
+        'Persistência pela API (/api/data). Em dev é arquivo data/tv-database.json; na Netlify são Netlify Blobs — faça backup.';
+    } else {
+      el.textContent =
+        'API offline. Dev: rode npm start na pasta. Netlify: abra pela URL publicada após deploy (Functions ligadas ao site).';
+    }
+  }
+
+  function loadPlanos() {
+    return DB_STATE.planos.slice();
+  }
+  function savePlanos(arr) {
+    DB_STATE.planos = Array.isArray(arr) ? arr : [];
+    queuePersist();
+  }
+  function loadClientes() {
+    return DB_STATE.clientes.slice();
+  }
+  function saveClientes(arr) {
+    DB_STATE.clientes = Array.isArray(arr) ? arr : [];
+    queuePersist();
+  }
+  function loadBanners() {
+    return DB_STATE.banners.slice();
+  }
+  function saveBanners(arr) {
+    DB_STATE.banners = filterBanners(Array.isArray(arr) ? arr : []);
+    queuePersist();
+  }
+
+  function brl(n) {
+    n = Number(n) || 0;
+    return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+  function parseMoney(s) {
+    if (typeof s === 'number') return isNaN(s) ? 0 : s;
+    var t = String(s || '').trim().replace(/\s/g, '');
+    if (!t) return 0;
+    if (/,/.test(t) && /\./.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+    else if (/,/.test(t) && !/\./.test(t)) t = t.replace(',', '.');
+    var n = parseFloat(t);
+    return isNaN(n) ? 0 : n;
+  }
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._h);
+    t._h = setTimeout(function () { t.classList.remove('show'); }, 2800);
+  }
+
+  function getPlanoById(id) {
+    if (id == null || id === '') return null;
+    return loadPlanos().filter(function (p) { return String(p.id) === String(id); })[0] || null;
+  }
+
+  function seedIfEmpty() {
+    if (!SERVER_READY) return;
+    var p = loadPlanos();
+    if (p.length === 0) {
+      p = [
+        { id: uuid(), nome: 'Mensal', valor: 35, descricao: 'Filmes, séries e esportes. Cobrança mensal.', maisVendido: false },
+        { id: uuid(), nome: '3 meses', valor: 90, descricao: 'Mesmo catálogo; valor referente ao trimestre.', maisVendido: false },
+        { id: uuid(), nome: '6 meses', valor: 170, descricao: 'Economia vs. mensal; valor do semestre.', maisVendido: true },
+        { id: uuid(), nome: '1 ano', valor: 320, descricao: 'Melhor preço médio; pagamento anual.', maisVendido: false }
+      ];
+      savePlanos(p);
+      showToast('Planos exemplo carregados. Edite ou exclua à vontade.');
+    }
+  }
+
+  function fillPlanoSelect() {
+    var sel = document.getElementById('cliPlano');
+    var planos = loadPlanos();
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">— Selecionar plano —</option>';
+    planos.forEach(function (pl) {
+      var o = document.createElement('option');
+      o.value = pl.id;
+      o.textContent = pl.nome + ' — ' + brl(pl.valor);
+      sel.appendChild(o);
+    });
+    sel.value = cur;
+  }
+
+  function renderPlanosTable() {
+    var tb = document.getElementById('tblPlanos');
+    var planos = loadPlanos();
+    if (planos.length === 0) {
+      tb.innerHTML = '<tr><td colspan="5" class="empty">Nenhum plano. Cadastre o primeiro ao lado.</td></tr>';
+      return;
+    }
+    tb.innerHTML = planos.map(function (pl) {
+      var sd = String(pl.descricao || '').slice(0, 80);
+      if (String(pl.descricao || '').length > 80) sd += '…';
+      var land = pl.maisVendido === true ? '<span class="badge-landing">Mais vendido</span>' : '—';
+      return '<tr data-id="' + pl.id + '">' +
+        '<td><strong>' + escapeHtml(pl.nome) + '</strong></td>' +
+        '<td>' + brl(pl.valor) + '</td>' +
+        '<td style="color:var(--text2);max-width:240px;">' + escapeHtml(sd || '—') + '</td>' +
+        '<td>' + land + '</td>' +
+        '<td class="actions">' +
+          '<button type="button" class="btn btn-ghost btn-edit-plano">Editar</button>' +
+          '<button type="button" class="btn btn-danger btn-del-plano">Excluir</button>' +
+        '</td></tr>';
+    }).join('');
+  }
+
+  function renderClientesTable() {
+    var tb = document.getElementById('tblClientes');
+    var lista = loadClientes().slice().sort(function (a, b) {
+      return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0);
+    });
+    if (lista.length === 0) {
+      tb.innerHTML = '<tr><td colspan="6" class="empty">Nenhum cliente. Use o formulário acima para cadastrar.</td></tr>';
+      return;
+    }
+    tb.innerHTML = lista.map(function (c) {
+      var plano = getPlanoById(c.planoId);
+      var nomePlano = plano ? plano.nome : '—';
+      var val = plano ? brl(plano.valor) : '—';
+      var dt = c.criadoEm ? new Date(c.criadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+      return '<tr data-id="' + c.id + '">' +
+        '<td>' + escapeHtml(c.nome) + '</td>' +
+        '<td>' + escapeHtml(c.telefone) + '</td>' +
+        '<td>' + escapeHtml(nomePlano) + '</td>' +
+        '<td>' + val + '</td>' +
+        '<td style="color:var(--text2);">' + dt + '</td>' +
+        '<td class="actions">' +
+          '<button type="button" class="btn btn-ghost btn-edit-cli">Editar</button>' +
+          '<button type="button" class="btn btn-danger btn-del-cli">Excluir</button>' +
+        '</td></tr>';
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function computeMrr() {
+    var cli = loadClientes();
+    var sum = 0;
+    cli.forEach(function (c) {
+      var pl = getPlanoById(c.planoId);
+      if (pl) sum += Number(pl.valor) || 0;
+    });
+    return sum;
+  }
+
+  function refreshDash() {
+    document.getElementById('kpiPlanos').textContent = loadPlanos().length;
+    document.getElementById('kpiClientes').textContent = loadClientes().length;
+    document.getElementById('kpiMrr').textContent = brl(computeMrr());
+
+    var recent = loadClientes().slice().sort(function (a, b) {
+      return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0);
+    }).slice(0, 8);
+
+    var w = document.getElementById('dashRecentWrap');
+    if (recent.length === 0) {
+      w.innerHTML = '<p class="empty" style="padding:24px;">Nenhum cliente ainda.</p>';
+      return;
+    }
+    w.innerHTML = '<table><thead><tr><th>Nome</th><th>Plano</th><th>Valor</th><th>Cadastro</th></tr></thead><tbody>' +
+      recent.map(function (c) {
+        var pl = getPlanoById(c.planoId);
+        return '<tr>' +
+          '<td>' + escapeHtml(c.nome) + '</td>' +
+          '<td>' + escapeHtml(pl ? pl.nome : '—') + '</td>' +
+          '<td>' + (pl ? brl(pl.valor) : '—') + '</td>' +
+          '<td style="color:var(--text2);">' + (c.criadoEm ? new Date(c.criadoEm).toLocaleString('pt-BR') : '—') + '</td>' +
+          '</tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  function resetPlanoForm() {
+    document.getElementById('planoId').value = '';
+    document.getElementById('planoNome').value = '';
+    document.getElementById('planoValor').value = '';
+    document.getElementById('planoDesc').value = '';
+    document.getElementById('planoMaisVendido').checked = false;
+    document.getElementById('planoFormTitle').textContent = 'Novo plano';
+    document.getElementById('cancelPlano').style.display = 'none';
+  }
+  function resetCliForm() {
+    document.getElementById('cliId').value = '';
+    document.getElementById('cliNome').value = '';
+    document.getElementById('cliTel').value = '';
+    document.getElementById('cliEmail').value = '';
+    document.getElementById('cliObs').value = '';
+    document.getElementById('cliPlano').value = '';
+    document.getElementById('cliFormTitle').textContent = 'Novo cliente';
+    document.getElementById('cancelCli').style.display = 'none';
+  }
+
+  function refreshAll() {
+    seedIfEmpty();
+    fillPlanoSelect();
+    renderPlanosTable();
+    renderClientesTable();
+    renderBannersTable();
+    refreshDash();
+  }
+
+  function resetBannerForm() {
+    document.getElementById('bannerEditId').value = '';
+    document.getElementById('bannerFormTitle').textContent = 'Novo slide';
+    document.getElementById('bannerSubmitBtn').textContent = 'Salvar no carrossel';
+    document.getElementById('cancelBannerEdit').style.display = 'none';
+    document.getElementById('bannerUrl').value = '';
+    document.getElementById('bannerAlt').value = '';
+    document.getElementById('bannerTag').value = '';
+    document.getElementById('bannerTitulo').value = '';
+    document.getElementById('bannerSub').value = '';
+    document.getElementById('bannerCta1').value = '';
+    document.getElementById('bannerCta1href').value = '';
+    document.getElementById('bannerCta2').value = '';
+    document.getElementById('bannerCta2href').value = '';
+    var fileEl = document.getElementById('bannerFile');
+    if (fileEl) fileEl.value = '';
+  }
+
+  function fillBannerForm(b) {
+    document.getElementById('bannerEditId').value = String(b.id || '');
+    document.getElementById('bannerFormTitle').textContent = 'Editar slide';
+    document.getElementById('bannerSubmitBtn').textContent = 'Atualizar slide';
+    document.getElementById('cancelBannerEdit').style.display = '';
+    document.getElementById('bannerUrl').value = /^data:image\//i.test(String(b.src || '')) ? '' : String(b.src || '');
+    document.getElementById('bannerAlt').value = String(b.alt || '');
+    document.getElementById('bannerTag').value = String(b.tag || '');
+    document.getElementById('bannerTitulo').value = String(b.titulo || '');
+    document.getElementById('bannerSub').value = String(b.subtitulo || '');
+    document.getElementById('bannerCta1').value = String(b.cta1 || '');
+    document.getElementById('bannerCta1href').value = String(b.cta1href || '');
+    document.getElementById('bannerCta2').value = String(b.cta2 || '');
+    document.getElementById('bannerCta2href').value = String(b.cta2href || '');
+    var fileEl = document.getElementById('bannerFile');
+    if (fileEl) fileEl.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function mergeBannerFields(base) {
+    var alt = document.getElementById('bannerAlt').value.trim() || 'Banner promocional';
+    var titulo = document.getElementById('bannerTitulo').value.trim();
+    if (!titulo) titulo = alt;
+    return Object.assign({}, base, {
+      alt: alt,
+      tag: document.getElementById('bannerTag').value.trim() || 'NOVO CONTEÚDO',
+      titulo: titulo,
+      subtitulo: document.getElementById('bannerSub').value.trim(),
+      cta1: document.getElementById('bannerCta1').value.trim() || 'Assistir agora',
+      cta1href: document.getElementById('bannerCta1href').value.trim() || '#planos',
+      cta2: document.getElementById('bannerCta2').value.trim() || 'Mais informações',
+      cta2href: document.getElementById('bannerCta2href').value.trim() || '#contato'
+    });
+  }
+
+  function renderBannersTable() {
+    var tb = document.getElementById('tblBanners');
+    if (!tb) return;
+    var banners = loadBanners();
+    if (banners.length === 0) {
+      tb.innerHTML =
+        '<tr><td colspan="5" class="empty">Nenhum slide cadastrado. A landing usará os arquivos padrão em assets/hero.</td></tr>';
+      return;
+    }
+    tb.innerHTML = banners
+      .map(function (b, idx) {
+        var srcDisp = escapeHtml(String(b.src || '').slice(0, 80));
+        if (String(b.src || '').length > 80) srcDisp += '…';
+        var isData = /^data:image\//i.test(String(b.src || ''));
+        var thumbSrc = escapeHtmlAttr(b.src);
+        var tit = escapeHtml(String(b.titulo || b.alt || '—').slice(0, 60));
+        return (
+          '<tr data-id="' +
+          escapeHtmlAttr(b.id) +
+          '">' +
+          '<td><img class="banner-thumb" src="' +
+          thumbSrc +
+          '" alt=""></td>' +
+          '<td>' +
+          tit +
+          '</td>' +
+          '<td class="src-cell" title="' +
+          escapeHtmlAttr(b.src) +
+          '">' +
+          srcDisp +
+          (isData ? '<br><span style="font-size:10px;color:var(--cyan);">(base64)</span>' : '') +
+          '</td>' +
+          '<td style="color:var(--text2);">' +
+          (idx + 1) +
+          ' / ' +
+          banners.length +
+          '</td>' +
+          '<td class="actions">' +
+          '<button type="button" class="btn btn-ghost btn-banner-up"' +
+          (idx === 0 ? ' disabled style="opacity:.4"' : '') +
+          '>Subir</button>' +
+          '<button type="button" class="btn btn-ghost btn-banner-down"' +
+          (idx === banners.length - 1 ? ' disabled style="opacity:.4"' : '') +
+          '>Descer</button>' +
+          '<button type="button" class="btn btn-ghost btn-edit-banner">Editar</button>' +
+          '<button type="button" class="btn btn-danger btn-del-banner">Remover</button>' +
+          '</td></tr>'
+        );
+      })
+      .join('');
+  }
+
+  function escapeHtmlAttr(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function moveBanner(id, delta) {
+    var list = loadBanners().slice();
+    var i = -1;
+    for (var idx = 0; idx < list.length; idx++) {
+      if (String(list[idx].id) === String(id)) {
+        i = idx;
+        break;
+      }
+    }
+    var j = i + delta;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    var t = list[i];
+    list[i] = list[j];
+    list[j] = t;
+    saveBanners(list);
+    renderBannersTable();
+    showToast('Ordem atualizada.');
+  }
+
+  function switchToView(v) {
+    document.querySelectorAll('aside nav button').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-view') === v);
+    });
+    document.querySelectorAll('.view').forEach(function (el) {
+      el.classList.remove('active');
+    });
+    var section = document.getElementById('view-' + v);
+    if (section) section.classList.add('active');
+    var titles = { dash: 'Painel gerencial', planos: 'Planos', clientes: 'Clientes', banners: 'Slides da landing' };
+    document.getElementById('pageTitle').textContent = titles[v] || '';
+    document.getElementById('sidebar').classList.toggle('open', false);
+    if (v === 'dash') refreshDash();
+    if (v === 'planos') {
+      fillPlanoSelect();
+      renderPlanosTable();
+    }
+    if (v === 'clientes') {
+      fillPlanoSelect();
+      renderClientesTable();
+    }
+    if (v === 'banners') renderBannersTable();
+  }
+
+  document.querySelectorAll('aside nav button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      switchToView(btn.getAttribute('data-view'));
+    });
+  });
+
+  document.getElementById('menuBtn').addEventListener('click', function () {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  var cancelBannerBtn = document.getElementById('cancelBannerEdit');
+  if (cancelBannerBtn) {
+    cancelBannerBtn.addEventListener('click', function () {
+      resetBannerForm();
+      showToast('Edição cancelada.');
+    });
+  }
+
+  document.getElementById('formBanner').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var urlEl = document.getElementById('bannerUrl');
+    var fileEl = document.getElementById('bannerFile');
+    var url = urlEl.value.trim();
+    var file = fileEl.files && fileEl.files[0];
+    var editId = document.getElementById('bannerEditId').value.trim();
+
+    function finishSave(list) {
+      saveBanners(list);
+      resetBannerForm();
+      renderBannersTable();
+      showToast(editId ? 'Slide atualizado.' : 'Slide adicionado. Atualize a landing.');
+    }
+
+    if (file && file.size > 1900000) {
+      showToast('Arquivo muito grande (> ~1,9 MB). Comprima ou use URL.');
+      return;
+    }
+
+    if (editId) {
+      var cur = loadBanners().filter(function (b) {
+        return String(b.id) === editId;
+      })[0];
+      if (!cur) {
+        showToast('Slide não encontrado.');
+        return;
+      }
+      if (file) {
+        var fr = new FileReader();
+        fr.onload = function () {
+          var list = loadBanners().map(function (b) {
+            if (String(b.id) !== editId) return b;
+            return mergeBannerFields(Object.assign({}, b, { src: fr.result }));
+          });
+          finishSave(list);
+        };
+        fr.onerror = function () {
+          showToast('Não foi possível ler o arquivo.');
+        };
+        fr.readAsDataURL(file);
+        return;
+      }
+      var srcFinal = cur.src;
+      if (url) srcFinal = url;
+      var list = loadBanners().map(function (b) {
+        if (String(b.id) !== editId) return b;
+        return mergeBannerFields(Object.assign({}, b, { src: srcFinal }));
+      });
+      finishSave(list);
+      return;
+    }
+
+    if (file) {
+      var fr2 = new FileReader();
+      fr2.onload = function () {
+        var list = loadBanners().slice();
+        list.push(
+          mergeBannerFields({
+            id: uuid(),
+            src: fr2.result
+          })
+        );
+        finishSave(list);
+      };
+      fr2.onerror = function () {
+        showToast('Não foi possível ler o arquivo.');
+      };
+      fr2.readAsDataURL(file);
+      return;
+    }
+    if (!url) {
+      showToast('Informe URL/caminho da imagem ou escolha um arquivo.');
+      return;
+    }
+    var list = loadBanners().slice();
+    list.push(
+      mergeBannerFields({
+        id: uuid(),
+        src: url
+      })
+    );
+    finishSave(list);
+  });
+
+  document.getElementById('tblBanners').addEventListener('click', function (e) {
+    var del = e.target.closest('.btn-del-banner');
+    var up = e.target.closest('.btn-banner-up');
+    var down = e.target.closest('.btn-banner-down');
+    var edit = e.target.closest('.btn-edit-banner');
+    var tr = e.target.closest('tr[data-id]');
+    if (!tr || !tr.getAttribute('data-id')) return;
+    var id = tr.getAttribute('data-id');
+    if (edit) {
+      var b = loadBanners().filter(function (x) {
+        return String(x.id) === String(id);
+      })[0];
+      if (b) fillBannerForm(b);
+      return;
+    }
+    if (del) {
+      if (!confirm('Remover este slide da landing?')) return;
+      saveBanners(loadBanners().filter(function (b) {
+        return String(b.id) !== String(id);
+      }));
+      renderBannersTable();
+      showToast('Slide removido.');
+      return;
+    }
+    if (up) moveBanner(id, -1);
+    if (down) moveBanner(id, 1);
+  });
+
+  document.getElementById('formPlano').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var id = document.getElementById('planoId').value;
+    var nome = document.getElementById('planoNome').value.trim();
+    var valor = parseMoney(document.getElementById('planoValor').value);
+    var desc = document.getElementById('planoDesc').value.trim();
+    var destaque = document.getElementById('planoMaisVendido').checked;
+    var planos = loadPlanos();
+
+    function rowPlano(pid, pnome, pvalor, pdesc, pflag) {
+      return { id: pid, nome: pnome, valor: pvalor, descricao: pdesc, maisVendido: !!pflag };
+    }
+
+    if (id) {
+      planos = planos.map(function (p) {
+        if (String(p.id) === String(id)) {
+          return rowPlano(p.id, nome, valor, desc, destaque);
+        }
+        return destaque ? rowPlano(p.id, p.nome, p.valor, p.descricao || '', false) : rowPlano(p.id, p.nome, p.valor, p.descricao || '', !!p.maisVendido);
+      });
+      showToast('Plano atualizado.');
+    } else {
+      if (destaque) {
+        planos = planos.map(function (p) {
+          return rowPlano(p.id, p.nome, p.valor, p.descricao || '', false);
+        });
+      }
+      planos.push(rowPlano(uuid(), nome, valor, desc, destaque));
+      showToast('Plano cadastrado.');
+    }
+    savePlanos(planos);
+    resetPlanoForm();
+    refreshAll();
+  });
+
+  document.getElementById('cancelPlano').addEventListener('click', resetPlanoForm);
+
+  document.getElementById('formCliente').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var id = document.getElementById('cliId').value;
+    var nome = document.getElementById('cliNome').value.trim();
+    var tel = document.getElementById('cliTel').value.trim();
+    var email = document.getElementById('cliEmail').value.trim();
+    var planoId = document.getElementById('cliPlano').value || '';
+    var obs = document.getElementById('cliObs').value.trim();
+    var lista = loadClientes();
+    if (id) {
+      lista = lista.map(function (c) {
+        if (String(c.id) !== String(id)) return c;
+        return {
+          id: c.id,
+          nome: nome,
+          telefone: tel,
+          email: email,
+          planoId: planoId,
+          observacoes: obs,
+          criadoEm: c.criadoEm
+        };
+      });
+      showToast('Cliente atualizado.');
+    } else {
+      lista.push({
+        id: uuid(),
+        nome: nome,
+        telefone: tel,
+        email: email,
+        planoId: planoId,
+        observacoes: obs,
+        criadoEm: new Date().toISOString()
+      });
+      showToast('Cliente cadastrado.');
+    }
+    saveClientes(lista);
+    resetCliForm();
+    refreshAll();
+  });
+
+  document.getElementById('cancelCli').addEventListener('click', resetCliForm);
+
+  document.getElementById('tblPlanos').addEventListener('click', function (e) {
+    var delBtn = e.target.closest('.btn-del-plano');
+    var editBtn = e.target.closest('.btn-edit-plano');
+    var tr = (delBtn || editBtn) ? (delBtn || editBtn).closest('tr') : e.target.closest('tr');
+    if (!tr || !tr.getAttribute('data-id')) return;
+    var id = tr.getAttribute('data-id');
+    if (delBtn) {
+      var usados = loadClientes().filter(function (c) { return String(c.planoId) === String(id); }).length;
+      var msg = usados ? 'Este plano está vinculado a ' + usados + ' cliente(s). Excluir mesmo assim? Os clientes ficarão sem plano.' : 'Excluir este plano?';
+      if (!confirm(msg)) return;
+      savePlanos(loadPlanos().filter(function (p) { return String(p.id) !== String(id); }));
+      var clientes = loadClientes();
+      clientes.forEach(function (c, i) {
+        if (String(c.planoId) === String(id)) clientes[i].planoId = '';
+      });
+      saveClientes(clientes);
+      showToast('Plano removido.');
+      resetPlanoForm();
+      refreshAll();
+      return;
+    }
+    if (editBtn) {
+      var p = loadPlanos().filter(function (x) { return String(x.id) === String(id); })[0];
+      if (!p) {
+        showToast('Plano não encontrado.');
+        return;
+      }
+      switchToView('planos');
+      document.getElementById('planoId').value = p.id;
+      document.getElementById('planoNome').value = p.nome || '';
+      var vNum = Number(p.valor);
+      document.getElementById('planoValor').value = (isNaN(vNum) ? '' : vNum);
+      document.getElementById('planoDesc').value = p.descricao || '';
+      document.getElementById('planoMaisVendido').checked = p.maisVendido === true;
+      document.getElementById('planoFormTitle').textContent = 'Editar plano';
+      document.getElementById('cancelPlano').style.display = 'inline-flex';
+      document.getElementById('planoNome').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+
+  document.getElementById('tblClientes').addEventListener('click', function (e) {
+    var delBtn = e.target.closest('.btn-del-cli');
+    var editBtn = e.target.closest('.btn-edit-cli');
+    var tr = (delBtn || editBtn) ? (delBtn || editBtn).closest('tr') : e.target.closest('tr');
+    if (!tr || !tr.getAttribute('data-id')) return;
+    var id = tr.getAttribute('data-id');
+    if (delBtn) {
+      if (!confirm('Excluir este cliente?')) return;
+      saveClientes(loadClientes().filter(function (c) { return String(c.id) !== String(id); }));
+      showToast('Cliente removido.');
+      resetCliForm();
+      refreshAll();
+      return;
+    }
+    if (editBtn) {
+      var c = loadClientes().filter(function (x) { return String(x.id) === String(id); })[0];
+      if (!c) {
+        showToast('Cliente não encontrado.');
+        return;
+      }
+      switchToView('clientes');
+      fillPlanoSelect();
+      document.getElementById('cliId').value = c.id;
+      document.getElementById('cliNome').value = c.nome;
+      document.getElementById('cliTel').value = c.telefone;
+      document.getElementById('cliEmail').value = c.email || '';
+      document.getElementById('cliObs').value = c.observacoes || '';
+      document.getElementById('cliPlano').value = c.planoId || '';
+      document.getElementById('cliFormTitle').textContent = 'Editar cliente';
+      document.getElementById('cancelCli').style.display = 'inline-flex';
+      document.getElementById('cliNome').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+
+  async function bootDashboard() {
+    try {
+      await hydrateFromServer();
+      updateTopbarMeta();
+      if (!SERVER_READY) {
+        showToast(
+          'Sem /api/data: use npm start (local) ou o domínio da Netlify depois do deploy.'
+        );
+      }
+      seedIfEmpty();
+      refreshAll();
+    } catch (err) {
+      console.error(err);
+      updateTopbarMeta();
+      showToast('Erro ao iniciar o painel. Veja o console (F12) e confira se /api/data responde.');
+    }
+  }
+
+  bootDashboard();
+})();
+  </script>
+</body>
+</html>
