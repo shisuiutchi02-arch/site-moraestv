@@ -640,30 +640,39 @@
       margin-top: 8px;
     }
     .marquee {
-      --marquee-duration: 42s;
+      --marquee-duration: 38s;
       position: relative;
       width: 100%;
       overflow: hidden;
-      mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
-      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 6%, #000 94%, transparent 100%);
+      background: #030508;
+    }
+    .marquee__viewport {
+      overflow: hidden;
+      width: 100%;
+      mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
     }
     .marquee__track {
       display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 14px;
       width: max-content;
+      flex-shrink: 0;
+      will-change: transform;
       animation: marquee-scroll var(--marquee-duration) linear infinite;
+      backface-visibility: hidden;
     }
     .marquee--reverse {
-      --marquee-duration: 52s;
-    }
-    .marquee--reverse .marquee__track {
-      animation-direction: reverse;
+      --marquee-duration: 46s;
     }
     .marquee:hover .marquee__track {
       animation-play-state: paused;
     }
     @keyframes marquee-scroll {
-      from { transform: translateX(0); }
-      to { transform: translateX(-50%); }
+      0% { transform: translate3d(0, 0, 0); }
+      /* Duas faixas iguais + gap 14px: período = 50% da largura + metade do gap */
+      100% { transform: translate3d(calc(-50% - 7px), 0, 0); }
     }
     .marquee__list {
       display: flex;
@@ -671,8 +680,9 @@
       gap: 14px;
       list-style: none;
       margin: 0;
-      padding: 6px 10px;
+      padding: 6px 0;
       flex-shrink: 0;
+      flex-grow: 0;
     }
     .logo-tile {
       flex: 0 0 auto;
@@ -751,10 +761,10 @@
         flex-wrap: wrap;
         justify-content: center;
         width: 100% !important;
-        max-width: 900px;
+        max-width: 960px;
         margin: 0 auto;
       }
-      .marquee {
+      .marquee__viewport {
         mask-image: none;
         -webkit-mask-image: none;
       }
@@ -974,51 +984,87 @@
       </div>
       <div class="marquee-rows">
         <div class="marquee" aria-label="Faixa de logos em movimento">
-          <div class="marquee__track">
-            <ul class="marquee__list">
-              <li class="logo-tile logo-tile--netflix">NETFLIX</li>
-              <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
-              <li class="logo-tile logo-tile--hbo">HBO</li>
-              <li class="logo-tile logo-tile--espn">ESPN</li>
-              <li class="logo-tile logo-tile--sportv">SporTV</li>
-              <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
-              <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
-              <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
-            </ul>
-            <ul class="marquee__list" aria-hidden="true">
-              <li class="logo-tile logo-tile--netflix">NETFLIX</li>
-              <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
-              <li class="logo-tile logo-tile--hbo">HBO</li>
-              <li class="logo-tile logo-tile--espn">ESPN</li>
-              <li class="logo-tile logo-tile--sportv">SporTV</li>
-              <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
-              <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
-              <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
-            </ul>
+          <div class="marquee__viewport">
+            <div class="marquee__track">
+              <ul class="marquee__list">
+                <li class="logo-tile logo-tile--netflix">NETFLIX</li>
+                <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
+                <li class="logo-tile logo-tile--hbo">HBO</li>
+                <li class="logo-tile logo-tile--espn">ESPN</li>
+                <li class="logo-tile logo-tile--sportv">SporTV</li>
+                <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
+                <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
+                <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
+                <li class="logo-tile logo-tile--netflix">NETFLIX</li>
+                <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
+                <li class="logo-tile logo-tile--hbo">HBO</li>
+                <li class="logo-tile logo-tile--espn">ESPN</li>
+                <li class="logo-tile logo-tile--sportv">SporTV</li>
+                <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
+                <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
+                <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
+              </ul>
+              <ul class="marquee__list" aria-hidden="true">
+                <li class="logo-tile logo-tile--netflix">NETFLIX</li>
+                <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
+                <li class="logo-tile logo-tile--hbo">HBO</li>
+                <li class="logo-tile logo-tile--espn">ESPN</li>
+                <li class="logo-tile logo-tile--sportv">SporTV</li>
+                <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
+                <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
+                <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
+                <li class="logo-tile logo-tile--netflix">NETFLIX</li>
+                <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
+                <li class="logo-tile logo-tile--hbo">HBO</li>
+                <li class="logo-tile logo-tile--espn">ESPN</li>
+                <li class="logo-tile logo-tile--sportv">SporTV</li>
+                <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
+                <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
+                <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
+              </ul>
+            </div>
           </div>
         </div>
         <div class="marquee marquee--reverse" aria-label="Segunda faixa de logos em movimento">
-          <div class="marquee__track">
-            <ul class="marquee__list">
-              <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
-              <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
-              <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
-              <li class="logo-tile logo-tile--sportv">SporTV</li>
-              <li class="logo-tile logo-tile--espn">ESPN</li>
-              <li class="logo-tile logo-tile--hbo">HBO</li>
-              <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
-              <li class="logo-tile logo-tile--netflix">NETFLIX</li>
-            </ul>
-            <ul class="marquee__list" aria-hidden="true">
-              <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
-              <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
-              <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
-              <li class="logo-tile logo-tile--sportv">SporTV</li>
-              <li class="logo-tile logo-tile--espn">ESPN</li>
-              <li class="logo-tile logo-tile--hbo">HBO</li>
-              <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
-              <li class="logo-tile logo-tile--netflix">NETFLIX</li>
-            </ul>
+          <div class="marquee__viewport">
+            <div class="marquee__track">
+              <ul class="marquee__list">
+                <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
+                <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
+                <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
+                <li class="logo-tile logo-tile--sportv">SporTV</li>
+                <li class="logo-tile logo-tile--espn">ESPN</li>
+                <li class="logo-tile logo-tile--hbo">HBO</li>
+                <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
+                <li class="logo-tile logo-tile--netflix">NETFLIX</li>
+                <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
+                <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
+                <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
+                <li class="logo-tile logo-tile--sportv">SporTV</li>
+                <li class="logo-tile logo-tile--espn">ESPN</li>
+                <li class="logo-tile logo-tile--hbo">HBO</li>
+                <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
+                <li class="logo-tile logo-tile--netflix">NETFLIX</li>
+              </ul>
+              <ul class="marquee__list" aria-hidden="true">
+                <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
+                <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
+                <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
+                <li class="logo-tile logo-tile--sportv">SporTV</li>
+                <li class="logo-tile logo-tile--espn">ESPN</li>
+                <li class="logo-tile logo-tile--hbo">HBO</li>
+                <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
+                <li class="logo-tile logo-tile--netflix">NETFLIX</li>
+                <li class="logo-tile logo-tile--cinemax">CINEMAX</li>
+                <li class="logo-tile logo-tile--tnt"><span class="tnt-t">TNT</span> <span class="tnt-s">SPORTS</span></li>
+                <li class="logo-tile logo-tile--globo"><span>globo</span>play</li>
+                <li class="logo-tile logo-tile--sportv">SporTV</li>
+                <li class="logo-tile logo-tile--espn">ESPN</li>
+                <li class="logo-tile logo-tile--hbo">HBO</li>
+                <li class="logo-tile logo-tile--prime">prime<span class="prime-line2">video ▸</span></li>
+                <li class="logo-tile logo-tile--netflix">NETFLIX</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -1152,10 +1198,10 @@
 
   <footer>
     <div class="wrap">
-      <p><strong>MoraesTV</strong> — empresa de exemplo para demonstração · CNPJ: 00.000.000/0001-00</p>
+      <p><strong>MoraesTV</strong></p>
       <p style="margin-top:10px;">
-        Substituía nome, valores, links de WhatsApp e telefone antes de divulgar.
-        · <a href="#top">Voltar ao topo</a>
+        
+         <!-- <a href="#top">Voltar ao topo</a> -->
       </p>
     </div>
   </footer>
@@ -1181,43 +1227,7 @@
       var API_DATA = '/api/data';
       /** Número do WhatsApp (somente dígitos, com DDI 55) — mesmo usado na área de contato */
       var WHATSAPP_PEDIDO = '5521997586235';
-      var LANDING_CACHE = { banners: [], ok: false };
-
-      /** Planos fixos da landing (valores em reais por período). */
-      var PLANOS_LANDING_FIXOS = [
-        {
-          id: 'fix-mensal',
-          nome: 'Mensal',
-          valor: 35,
-          precoNota: '/mês',
-          descricao: 'Filmes, séries e esportes\nRenovação mensal',
-          maisVendido: false
-        },
-        {
-          id: 'fix-3m',
-          nome: '3 meses',
-          valor: 90,
-          precoNota: 'no trimestre',
-          descricao: 'Mesmo catálogo do mensal\nEconomia em relação ao mês a mês',
-          maisVendido: false
-        },
-        {
-          id: 'fix-6m',
-          nome: '6 meses',
-          valor: 170,
-          precoNota: 'no semestre',
-          descricao: 'Melhor custo-benefício\nIdeal para quem já conhece o serviço',
-          maisVendido: true
-        },
-        {
-          id: 'fix-12m',
-          nome: '1 ano',
-          valor: 320,
-          precoNota: 'no ano',
-          descricao: 'Menor preço médio por mês\nPara quem quer tranquilidade longa',
-          maisVendido: false
-        }
-      ];
+      var LANDING_CACHE = { banners: [], planos: [], ok: false };
 
       function normalizeBannerSlide(b) {
         if (!b || !String(b.src || '').trim()) return null;
@@ -1293,7 +1303,7 @@
         return arr.length ? arr : defaultBannersLanding();
       }
       function loadPlanos() {
-        return PLANOS_LANDING_FIXOS.slice();
+        return Array.isArray(LANDING_CACHE.planos) ? LANDING_CACHE.planos.slice() : [];
       }
       function syncLandingFromServer() {
         return fetch(API_DATA, { headers: { Accept: 'application/json' }, cache: 'no-store' })
@@ -1303,6 +1313,7 @@
           })
           .then(function (doc) {
             LANDING_CACHE.ok = true;
+            LANDING_CACHE.planos = Array.isArray(doc.planos) ? doc.planos : [];
             LANDING_CACHE.banners = filterBannersLanding(doc.banners || []);
             renderPlanosLanding();
             rebuildHeroCarouselFromStorage();
@@ -1584,13 +1595,27 @@
 
         var planos = loadPlanos().slice();
 
+        if (planos.length === 0) {
+          grid.innerHTML =
+            '<div class="planos-vazio">' +
+            'Nenhum plano publicado ainda. Cadastre no <a href="dashboard.html">dashboard</a> — os valores aparecem aqui assim que a API <code>/api/data</code> estiver ativa (Netlify ou <code>npm start</code> local).</div>';
+          if (sub) {
+            sub.innerHTML = !LANDING_CACHE.ok
+              ? '<strong>API offline.</strong> Rode <code>npm start</code> nesta pasta ou abra o site pelo domínio da Netlify para carregar os planos do painel.'
+              : 'Os planos são os mesmos cadastrados no <a href="dashboard.html">dashboard</a>.';
+          }
+          return;
+        }
+
         if (sub) {
+          var n = planos.length;
           sub.innerHTML =
-            'Valores por período em <strong>filmes</strong>, <strong>séries</strong> e <strong>esportes</strong>. ' +
-            'Slides do topo (imagem, títulos e botões): edite em <a href="dashboard.html">dashboard</a> → Banners landing' +
-            (!LANDING_CACHE.ok
-              ? ' (API indisponível — usando imagens padrão).'
-              : ' quando quiser trocar as imagens.');
+            '<strong>' +
+            n +
+            '</strong> ' +
+            (n === 1 ? 'plano' : 'planos') +
+            ' cadastrados no painel. Slides do topo: <a href="dashboard.html">dashboard</a> → Slides da landing.' +
+            (!LANDING_CACHE.ok ? ' <em>(Última leitura da API pode estar desatualizada.)</em>' : '');
         }
 
         var feat = resolveFeaturedIndex(planos);

@@ -1,12 +1,15 @@
 {
   "name": "moraestv-site",
   "private": true,
-  "description": "Landing + dashboard: local npm start (JSON em disco); Netlify (Function + Blobs em /api/data).",
+  "description": "Landing + dashboard: JSON local, Netlify Blobs, ou Postgres (Supabase) com login no dashboard.",
   "scripts": {
     "start": "node server.js",
-    "netlify:dev": "npx --yes netlify-cli dev"
+    "netlify:dev": "npx --yes netlify-cli dev",
+    "migrate:supabase": "node scripts/migrate-json-to-supabase.mjs"
   },
   "dependencies": {
-    "@netlify/blobs": "^10.7.5"
+    "@netlify/blobs": "^10.7.5",
+    "@supabase/supabase-js": "^2.49.1",
+    "pg": "^8.13.1"
   }
 }

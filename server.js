@@ -1,6 +1,9 @@
 /**
- * Dev local: serve HTML e persiste planos/clientes/banners em data/tv-database.json (GET|PUT /api/data).
- * Produção Netlify: use netlify/functions/tv-data.mjs + Blobs na mesma rota /api/data.
+ * Dev local: serve HTML e /api/data.
+ * Sem DATABASE_URL: persiste em data/tv-database.json (GET/PUT sem auth).
+ * Com DATABASE_URL (Supabase Postgres): lê/grava tabela tv_site_data; GET público
+ * devolve só planos+banners; GET com Bearer (JWT Supabase) e PUT exigem usuário válido.
+ * Produção Netlify: netlify/functions/tv-data.mjs (Postgres ou Blobs se DATABASE_URL vazio).
  */
 'use strict';
 
@@ -40,6 +43,16 @@ function normalizeDb(j) {
     clientes: Array.isArray(d.clientes) ? d.clientes : [],
     banners: Array.isArray(d.banners) ? d.banners : [],
   };
+}
+
+function usePostgres() {
+  return Boolean(process.env.DATABASE_URL && String(process.env.DATABASE_URL).trim());
+}
+
+/** Resposta segura para a landing (sem lista de clientes). */
+function publicApiSlice(doc) {
+  const n = normalizeDb(doc);
+  return { version: n.version, planos: n.planos, banners: n.banners, clientes: [] };
 }
 
 async function loadDbRaw() {
@@ -119,10 +132,11 @@ function readBodyLimited(req, maxBytes) {
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(req.url.split('?')[0]);
 
-  const sendJson = (code, obj) => {
+  const sendJson = (code, obj, extraHeaders = {}) => {
     res.writeHead(code, {
       'Content-Type': MIME['.json'],
       'Cache-Control': 'no-store',
+      ...extraHeaders,
     });
     res.end(JSON.stringify(obj));
   };
@@ -140,9 +154,27 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'GET' && pathname === '/api/data') {
-    enqueueWrite(() => loadDbRaw())
-      .then((doc) => {
-        sendJson(200, doc);
+    Promise.resolve()
+      .then(async () => {
+        if (usePostgres()) {
+          const tvPg = require(path.join(ROOT, 'shared', 'tv-pg.cjs'));
+          const { getUserFromBearer } = require(path.join(ROOT, 'shared', 'supabase-verify-user.cjs'));
+          let payload = await tvPg.tvLoadPayload();
+          if (payload == null) payload = defaultDb();
+          const doc = normalizeDb(
+            typeof payload === 'object' && payload !== null ? payload : defaultDb()
+          );
+          const user = await getUserFromBearer(req.headers.authorization);
+          return { doc: user ? doc : publicApiSlice(doc), scope: user ? 'full' : 'public' };
+        }
+        const doc = await enqueueWrite(() => loadDbRaw());
+        return { doc, scope: 'full' };
+      })
+      .then(({ doc, scope }) => {
+        sendJson(200, doc, {
+          'X-Api-Scope': scope,
+          'X-Data-Auth': usePostgres() ? 'required' : 'optional',
+        });
       })
       .catch(() => fail(500, 'Erro ao ler banco'));
     return;
@@ -150,7 +182,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'PUT' && pathname === '/api/data') {
     readBodyLimited(req, MAX_PUT_BYTES)
-      .then((buf) => {
+      .then(async (buf) => {
         let doc;
         try {
           doc = JSON.parse(buf.toString('utf8'));
@@ -158,9 +190,25 @@ const server = http.createServer((req, res) => {
           fail(400, 'JSON inválido');
           return;
         }
-        return enqueueWrite(() => saveDbAtomic(doc)).then(() => {
-          sendJson(200, normalizeDb(doc));
-        });
+        const normalized = normalizeDb(doc);
+        if (usePostgres()) {
+          if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+            fail(500, 'Com DATABASE_URL defina SUPABASE_URL e SUPABASE_ANON_KEY');
+            return;
+          }
+          const { getUserFromBearer } = require(path.join(ROOT, 'shared', 'supabase-verify-user.cjs'));
+          const user = await getUserFromBearer(req.headers.authorization);
+          if (!user) {
+            fail(401, 'Não autorizado: faça login no dashboard (Supabase).');
+            return;
+          }
+          const tvPg = require(path.join(ROOT, 'shared', 'tv-pg.cjs'));
+          await enqueueWrite(() => tvPg.tvSavePayload(normalized));
+          sendJson(200, normalized, { 'X-Api-Scope': 'full' });
+          return;
+        }
+        await enqueueWrite(() => saveDbAtomic(normalized));
+        sendJson(200, normalized, { 'X-Api-Scope': 'full' });
       })
       .catch((err) => {
         if (err && err.message === 'BODY_TOO_LARGE') fail(413, 'Corpo grande demais (banners?)');

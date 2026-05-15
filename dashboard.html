@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard gerencial — Planos &amp; Clientes</title>
+  <script>
+    window.TV_DASHBOARD_CONFIG = {
+      supabaseUrl: 'https://vhbyqdhuytfucjpzrfmp.supabase.co',
+      supabaseAnonKey: ''
+    };
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -273,8 +279,40 @@
     }
     .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
+    .login-gate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      width: 100%;
+      padding: 24px;
+      box-sizing: border-box;
+      background: var(--bg);
+    }
+    .login-gate[hidden] { display: none !important; }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+    }
+    .login-card h2 { font-size: 18px; margin-bottom: 8px; font-weight: 600; }
+    .login-card .hint { margin-bottom: 18px; }
+    .login-error { color: var(--red); font-size: 13px; min-height: 1.25em; margin-bottom: 10px; }
+    .app-shell {
+      display: none;
+      flex: 1;
+      width: 100%;
+      min-height: 100vh;
+      align-items: stretch;
+    }
+    body.tv-dash--app .app-shell { display: flex; }
+    body.tv-dash--app .login-gate { display: none !important; }
+
     @media (max-width: 860px) {
-      body { flex-direction: column; }
+      body.tv-dash--app .app-shell { flex-direction: column; }
       #menuBtn { display: inline-flex; }
       aside {
         width: 100%;
@@ -289,6 +327,22 @@
   </style>
 </head>
 <body>
+  <div id="loginGate" class="login-gate">
+    <div class="login-card">
+      <h2>Entrar no painel</h2>
+      <p class="hint">Use o e-mail e a senha do usuário criado em <strong>Supabase → Authentication → Users</strong>. Cole a <strong>anon public</strong> em <code>TV_DASHBOARD_CONFIG</code> no topo deste HTML.</p>
+      <div id="loginError" class="login-error" aria-live="polite"></div>
+      <label for="loginEmail">E-mail</label>
+      <input type="email" id="loginEmail" autocomplete="username" required placeholder="admin@seudominio.com">
+      <label for="loginPassword">Senha</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" required placeholder="••••••••">
+      <div class="btn-row" style="margin-top:16px;">
+        <button type="button" class="btn btn-primary" id="loginSubmitBtn">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="appShell" class="app-shell">
   <aside id="sidebar">
     <div class="logo">TV <span>Gerencial</span></div>
     <nav>
@@ -305,7 +359,10 @@
         <button type="button" id="menuBtn" aria-label="Menu">☰ Menu</button>
         <h1 id="pageTitle">Painel gerencial</h1>
       </div>
-      <div class="topbar-meta" id="topbarMeta">Carregando dados do servidor…</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="topbar-meta" id="topbarMeta">Carregando dados do servidor…</div>
+        <button type="button" class="btn btn-ghost" id="logoutBtn" style="display:none;">Sair</button>
+      </div>
     </div>
 
     <div class="content">
@@ -458,12 +515,46 @@
       </section>
     </div>
   </main>
+  </div>
 
   <div class="toast" id="toast" role="status"></div>
 
   <script>
 (function () {
   var API_DATA = '/api/data';
+  var cfg = typeof window !== 'undefined' ? window.TV_DASHBOARD_CONFIG || {} : {};
+  var AUTH_MODE = Boolean(
+    String(cfg.supabaseUrl || '').trim() && String(cfg.supabaseAnonKey || '').trim()
+  );
+  var supabaseClient = null;
+  var accessTokenCache = null;
+  var loginGateEl = null;
+
+  async function getSupabase() {
+    if (!AUTH_MODE) return null;
+    if (supabaseClient) return supabaseClient;
+    var mod = await import('https://esm.sh/@supabase/supabase-js@2.49.1');
+    supabaseClient = mod.createClient(String(cfg.supabaseUrl).trim(), String(cfg.supabaseAnonKey).trim(), {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
+    return supabaseClient;
+  }
+
+  async function syncAccessTokenFromSession() {
+    accessTokenCache = null;
+    if (!AUTH_MODE) return;
+    var sb = await getSupabase();
+    if (!sb) return;
+    var res = await sb.auth.getSession();
+    if (res.data && res.data.session) accessTokenCache = res.data.session.access_token;
+  }
+
+  function authFetchHeaders() {
+    var h = { Accept: 'application/json' };
+    if (accessTokenCache) h.Authorization = 'Bearer ' + accessTokenCache;
+    return h;
+  }
+
   var LEGACY_LS_PLANOS = 'tvGerencial_planos_v1';
   var LEGACY_LS_CLI = 'tvGerencial_clientes_v1';
   var LEGACY_LS_BANNERS = 'tvGerencial_banners_v1';
@@ -496,8 +587,13 @@
   async function hydrateFromServer() {
     SERVER_READY = false;
     try {
-      var r = await fetch(API_DATA, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      await syncAccessTokenFromSession();
+      var r = await fetch(API_DATA, { headers: authFetchHeaders(), cache: 'no-store' });
       if (!r.ok) throw new Error(String(r.status));
+      var dataAuth = r.headers.get('X-Data-Auth');
+      if (dataAuth === 'required' && !AUTH_MODE) throw new Error('needs_dashboard_config');
+      var scope = r.headers.get('X-Api-Scope') || 'full';
+      if (AUTH_MODE && scope !== 'full') throw new Error('public_scope');
       var raw = await r.json();
       var n = normalizeFromDoc(raw);
       DB_STATE.version = n.version;
@@ -566,12 +662,17 @@
     if (persistInFlight) return false;
     persistInFlight = true;
     try {
+      await syncAccessTokenFromSession();
+      var hdr = Object.assign({ 'Content-Type': 'application/json' }, authFetchHeaders());
       var r = await fetch(API_DATA, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: hdr,
         body: JSON.stringify(DB_STATE),
         cache: 'no-store',
       });
+      if (r.status === 401) {
+        throw new Error('unauthorized');
+      }
       if (!r.ok) {
         var tx = await r.text();
         throw new Error(tx || String(r.status));
@@ -585,9 +686,13 @@
       return true;
     } catch (e) {
       if (!silentFail) {
-        showToast(
-          'Falha ao gravar em /api/data. Local: npm start nesta pasta. Produção: confira Functions + Blobs na Netlify.'
-        );
+        if (String(e && e.message) === 'unauthorized') {
+          showToast('Sessão expirada ou sem permissão. Entre novamente.');
+        } else {
+          showToast(
+            'Falha ao gravar em /api/data. Local: npm start nesta pasta. Produção: confira Functions + env (DATABASE_URL, Supabase).'
+          );
+        }
       }
       return false;
     } finally {
@@ -599,11 +704,16 @@
     var el = document.getElementById('topbarMeta');
     if (!el) return;
     if (SERVER_READY) {
-      el.textContent =
-        'Persistência pela API (/api/data). Em dev é arquivo data/tv-database.json; na Netlify são Netlify Blobs — faça backup.';
+      if (AUTH_MODE) {
+        el.textContent =
+          'Dados no Postgres (Supabase). GET público na landing não expõe clientes; gravação exige login.';
+      } else {
+        el.textContent =
+          'Persistência pela API (/api/data). Em dev é arquivo data/tv-database.json; na Netlify são Blobs ou Postgres se DATABASE_URL estiver definido.';
+      }
     } else {
       el.textContent =
-        'API offline. Dev: rode npm start na pasta. Netlify: abra pela URL publicada após deploy (Functions ligadas ao site).';
+        'API offline ou aguardando login. Dev: npm start + env. Netlify: DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY.';
     }
   }
 
@@ -1251,7 +1361,7 @@
     try {
       await hydrateFromServer();
       updateTopbarMeta();
-      if (!SERVER_READY) {
+      if (!SERVER_READY && !AUTH_MODE) {
         showToast(
           'Sem /api/data: use npm start (local) ou o domínio da Netlify depois do deploy.'
         );
@@ -1265,7 +1375,90 @@
     }
   }
 
-  bootDashboard();
+  async function initAuthAndDashboard() {
+    loginGateEl = document.getElementById('loginGate');
+    var logoutBtn = document.getElementById('logoutBtn');
+
+    if (!AUTH_MODE) {
+      if (loginGateEl) loginGateEl.hidden = true;
+      document.body.classList.add('tv-dash--app');
+      if (logoutBtn) logoutBtn.style.display = 'none';
+      await bootDashboard();
+      return;
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async function () {
+        var sb = await getSupabase();
+        if (sb) await sb.auth.signOut();
+        accessTokenCache = null;
+        SERVER_READY = false;
+        document.body.classList.remove('tv-dash--app');
+        if (loginGateEl) loginGateEl.hidden = false;
+        updateTopbarMeta();
+      });
+    }
+
+    var loginBtn = document.getElementById('loginSubmitBtn');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', async function () {
+        var errEl = document.getElementById('loginError');
+        errEl.textContent = '';
+        var email = document.getElementById('loginEmail').value.trim();
+        var password = document.getElementById('loginPassword').value;
+        try {
+          var sb = await getSupabase();
+          var out = await sb.auth.signInWithPassword({ email: email, password: password });
+          if (out.error) throw out.error;
+          await syncAccessTokenFromSession();
+          document.body.classList.add('tv-dash--app');
+          if (loginGateEl) loginGateEl.hidden = true;
+          if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+          await bootDashboard();
+        } catch (e) {
+          errEl.textContent = (e && e.message) || 'Falha no login';
+        }
+      });
+    }
+
+    var loginPass = document.getElementById('loginPassword');
+    if (loginPass) {
+      loginPass.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' && loginBtn) loginBtn.click();
+      });
+    }
+
+    await syncAccessTokenFromSession();
+    if (accessTokenCache) {
+      document.body.classList.add('tv-dash--app');
+      if (loginGateEl) loginGateEl.hidden = true;
+      if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+      await bootDashboard();
+    } else {
+      document.body.classList.remove('tv-dash--app');
+      if (loginGateEl) loginGateEl.hidden = false;
+      updateTopbarMeta();
+    }
+
+    var sb = await getSupabase();
+    if (sb) {
+      sb.auth.onAuthStateChange(function (event, session) {
+        if (event === 'SIGNED_OUT') {
+          accessTokenCache = null;
+          SERVER_READY = false;
+          document.body.classList.remove('tv-dash--app');
+          if (loginGateEl) loginGateEl.hidden = false;
+          if (logoutBtn) logoutBtn.style.display = 'none';
+          updateTopbarMeta();
+        }
+        if (event === 'TOKEN_REFRESHED' && session) {
+          accessTokenCache = session.access_token;
+        }
+      });
+    }
+  }
+
+  initAuthAndDashboard();
 })();
   </script>
 </body>
